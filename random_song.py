@@ -1,5 +1,7 @@
 from midiutil import MIDIFile
 from music21 import *
+from pydub import AudioSegment
+from midi2audio import FluidSynth
 import random
 import os
 
@@ -46,7 +48,7 @@ def generate_chord_progression(key, tempo, time_signature, measures, name, part,
         mf.writeFile(outf)
 
     print("\t\t\tChord pattern: " + str(chord_pattern))
-    return chord_pattern
+    return chord_pattern, filename
 
 def generate_bassline(key, tempo, time_signature, measures, name, part, chord_progression):
     # Create a MIDI file with one track
@@ -55,28 +57,23 @@ def generate_bassline(key, tempo, time_signature, measures, name, part, chord_pr
     time = 0
     mf.addTrackName(track, time, "Bassline")
     mf.addTempo(track, time, tempo)
-
+    
     # Determine the number of beats per measure based on the time signature
     beats_per_measure = int(time_signature.split('/')[0])
-
-    # Create a bassline
-    bassline = []
-    note_durations = []
-    total_notes = measures * beats_per_measure
-
+    
     # Create scale based on key
     if key[-1] == 'm':
         scale_obj = scale.MinorScale(key[:-1])
     else:
         scale_obj = scale.MajorScale(key)
-
+    
     # Create chord progression based on key and chord progression input
     chords = []
     for chord_symbol in chord_progression:
         chord_obj = roman.RomanNumeral(chord_symbol, key)
         chord_obj.key = key
         chords.append(chord_obj)
-
+    
     # Determine which notes to use based on song part and chord progression
     if part == 'intro':
         notes_to_use = [chords[0].pitches[0]]
@@ -84,30 +81,54 @@ def generate_bassline(key, tempo, time_signature, measures, name, part, chord_pr
         notes_to_use = [chords[-1].pitches[0]]
     else:
         notes_to_use = [chord.pitches[0] for chord in chords]
-
+    
+    # Define the Markov chain transition matrix
+    # This matrix defines the probabilities of transitioning from one note to another
+    transition_matrix = {}
+    for note in notes_to_use:
+        transition_matrix[note.midi] = {}
+        for next_note in notes_to_use:
+            transition_matrix[note.midi][next_note.midi] = 1 / len(notes_to_use)
+    
+    # Generate a random bassline using a Markov chain
+    bassline = []
+    note_durations = []
+    total_notes = measures * beats_per_measure
+    
+    # Choose the initial note randomly
+    current_note = random.choice(list(transition_matrix.keys()))
+    
     while total_notes > 0:
-        # Choose a random note and duration
-        note_name = random.choice(notes_to_use)
+        # Choose the next note based on the Markov chain transition probabilities
+        current_note = random.choices(
+            population=list(transition_matrix[current_note].keys()),
+            weights=list(transition_matrix[current_note].values())
+        )[0]
+        
+        # Choose a random duration for the note
         note_duration = random.choice([1, 2])
         if note_duration > total_notes:
             note_duration = total_notes
-
-        # Add note to bassline
-        note = pitch.Pitch(note_name.name)
-        note.octave = 2
-        bassline.append(note)
+        
+        # Add the note to the bassline
+        bassline.append(current_note)
         note_durations.append(note_duration)
-
+        
         total_notes -= note_duration
-
+    
     # Add notes to MIDI file
     for i in range(len(bassline)):
         note = bassline[i]
         note_duration = note_durations[i]
         velocity = random.randint(70, 100)
-        mf.addNote(track, 0, note.midi, time, note_duration, velocity)
+        
+        # Set the octave of the note to 2 (bass range)
+        note_obj = pitch.Pitch()
+        note_obj.midi = note
+        note_obj.octave = 2
+        
+        mf.addNote(track, 0, note_obj.midi, time, note_duration, velocity)
         time += note_duration
-
     # Save MIDI file
     directory = name.split('-')[0]
     if not os.path.exists(directory):
@@ -115,6 +136,7 @@ def generate_bassline(key, tempo, time_signature, measures, name, part, chord_pr
     filename = os.path.join(directory, name + "-bassline.mid")
     with open(filename, 'wb') as outf:
         mf.writeFile(outf)
+    return filename
     
 def generate_melody(key, tempo, time_signature, measures, name, part, chord_progression):
     # Create a MIDI file with one track
@@ -123,28 +145,23 @@ def generate_melody(key, tempo, time_signature, measures, name, part, chord_prog
     time = 0
     mf.addTrackName(track, time, "Melody")
     mf.addTempo(track, time, tempo)
-
+    
     # Determine the number of beats per measure based on the time signature
     beats_per_measure = int(time_signature.split('/')[0])
-
-    # Create a melody
-    melody = []
-    note_durations = []
-    total_notes = measures * beats_per_measure
-
+    
     # Create scale based on key
     if key[-1] == 'm':
         scale_obj = scale.MinorScale(key[:-1])
     else:
         scale_obj = scale.MajorScale(key)
-
+    
     # Create chord progression based on key and chord progression input
     chords = []
     for chord_symbol in chord_progression:
         chord_obj = roman.RomanNumeral(chord_symbol, key)
         chord_obj.key = key
         chords.append(chord_obj)
-
+    
     # Determine which notes to use based on song part and chord progression
     if part == 'intro':
         notes_to_use = chords[0].pitches
@@ -154,29 +171,46 @@ def generate_melody(key, tempo, time_signature, measures, name, part, chord_prog
         notes_to_use = []
         for chord in chords:
             notes_to_use.extend(chord.pitches)
-
+    
+    # Define the Markov chain transition matrix
+    # This matrix defines the probabilities of transitioning from one note to another
+    transition_matrix = {}
+    for note in notes_to_use:
+        transition_matrix[note.midi] = {}
+        for next_note in notes_to_use:
+            transition_matrix[note.midi][next_note.midi] = 1 / len(notes_to_use)
+    
+    # Generate a random melody using a Markov chain
+    melody = []
+    note_durations = []
+    total_notes = measures * beats_per_measure
+    
+    # Choose the initial note randomly
+    current_note = random.choice(list(transition_matrix.keys()))
+    
     while total_notes > 0:
-        # Choose a random note and duration
-        note_name = random.choice(notes_to_use)
+        # Choose the next note based on the Markov chain transition probabilities
+        current_note = random.choices(
+            population=list(transition_matrix[current_note].keys()),
+            weights=list(transition_matrix[current_note].values())
+        )[0]
+        
+        # Choose a random duration for the note
         note_duration = random.choice([1, 2])
         if note_duration > total_notes:
             note_duration = total_notes
-
-        # Add note to melody
-        note = pitch.Pitch(note_name.name)
-        melody.append(note)
+        
+        # Add the note to the melody
+        melody.append(current_note)
         note_durations.append(note_duration)
-
         total_notes -= note_duration
-
     # Add notes to MIDI file
     for i in range(len(melody)):
         note = melody[i]
         note_duration = note_durations[i]
         velocity = random.randint(70, 100)
-        mf.addNote(track, 0, note.midi, time, note_duration, velocity)
+        mf.addNote(track, 0, note, time, note_duration, velocity)
         time += note_duration
-
     # Save MIDI file
     directory = name.split('-')[0]
     if not os.path.exists(directory):
@@ -184,7 +218,7 @@ def generate_melody(key, tempo, time_signature, measures, name, part, chord_prog
     filename = os.path.join(directory, name + "-melody.mid")
     with open(filename, 'wb') as outf:
         mf.writeFile(outf)
-
+    return filename
 
 def generate_beat(tempo,time_signature,measures,name,part,filename):
     # Create a MIDI file with one track
@@ -214,15 +248,12 @@ def generate_beat(tempo,time_signature,measures,name,part,filename):
                 if song_part not in beat_patterns:
                     beat_patterns[song_part] = []
                 beat_patterns[song_part].append(beat_pattern)
-
     # Create a beat
     beat = []
-
     if part in beat_patterns:
         beat_pattern = random.choice(beat_patterns[part])
     else:
         beat_pattern = [kick ,0 ,snare ,0]
-    
     for i in range(measures):
         # Choose a random beat pattern based on song part and available patterns from file
         beat.extend(beat_pattern)
@@ -241,27 +272,99 @@ def generate_beat(tempo,time_signature,measures,name,part,filename):
     filename = os.path.join(directory, name + "-beat.mid")
     with open(filename, 'wb') as outf:
         mf.writeFile(outf)
-        
+    
     print("\t\t\tBeat: " + str(beat_pattern))
+    return filename
 
 def generate_song_parts(key, tempo, time_signature, song_structure, name, chord_pat_file, beat_pat_file):
     print("Generating song parts for: " + name)
     print("\tKey: " + key)
     print("\tTempo: " + str(tempo))
     print("\tTime signature: " + time_signature)
+    harm_filename = {}
+    bass_filename = {}
+    melo_filename = {}
+    beat_filename = {}
     for part, measures in song_structure.items():
         print("\t\tGenerating part: " + part + " (" + str(measures) + " measures)")
         name_part = name + "-" + part
-        chord_progression = generate_chord_progression(key, tempo, time_signature, measures, name_part, part, chord_pat_file)
-        generate_bassline(key, tempo, time_signature, measures, name_part, part, chord_progression)
-        generate_melody(key, tempo, time_signature, measures, name_part, part, chord_progression)
-        generate_beat(tempo, time_signature, measures, name_part, part, beat_pat_file)
+        chord_progression, harm_filename[part] = generate_chord_progression(key, tempo, time_signature, measures, name_part, part, chord_pat_file)
+        bass_filename[part] = generate_bassline(key, tempo, time_signature, measures, name_part, part, chord_progression)
+        melo_filename[part] = generate_melody(key, tempo, time_signature, measures, name_part, part, chord_progression)
+        beat_filename[part] = generate_beat(tempo, time_signature, measures, name_part, part, beat_pat_file)
+    return harm_filename, bass_filename, melo_filename, beat_filename
 
-# Example usage
+def generate_song_arrangement() :
+    common_structures = [
+        ['intro', 'verse', 'chorus', 'verse', 'chorus', 'bridge', 'chorus', 'outro'],
+        ['verse', 'chorus', 'verse', 'chorus', 'bridge', 'chorus'],
+        ['chorus', 'verse', 'chorus', 'bridge', 'verse', 'chorus'],
+        ['intro', 'verse', 'chorus', 'verse', 'chorus', 'outro'],
+        ['verse', 'chorus', 'verse', 'chorus', 'bridge', 'chorus'],
+        ['intro', 'verse', 'chorus', 'bridge', 'verse', 'chorus'],
+        ['intro', 'verse', 'chorus', 'verse', 'bridge', 'chorus'],
+        ['intro', 'verse', 'chorus', 'bridge','chorus'],
+        ['intro','verse','bridge','chorus','verse','chorus','outro'],
+        ['intro','verse','chorus','verse','bridge','chorus','outro']
+    ]
+    return random.choice(common_structures)
 
-# TODO: add a second data structure
-# to define different arrangements for the parts
+def mix_and_save(harm_filename, bass_filename, melo_filename, beat_filename, name):
+    song_arramgement = generate_song_arrangement()
+    print("Song arrangement: "+ str(song_arramgement) + "\n")
+    number_of_parts = len(song_arramgement)
+    # exit(0)
+    song_parts = []
+    part_counter = 0
+    # TODO: Choose a random soundfont for each layer from pattern file
+    beat_soundfont = os.path.join('sf','some_drum.sf2')
+    melody_soundfont = os.path.join('sf', 'JR_elepiano.sf2')
+    harmony_soundfont = os.path.join('sf','JR_organ.sf2')
+    bassline_soundfont = os.path.join('sf','Genycis_Dark_Stage_Bass.sf2')
 
+    for part in song_arramgement:
+        part_counter += 1        
+        print("Mixing part: " + part + (' (' + str(part_counter) + ' of ' + str(number_of_parts) + ')'))        
+        # Render each MIDI file to an audio file using the chosen soundfont
+        beat_wav = 'beat' + "-" + part + "-" + str(part_counter) + ".wav"
+        beat_wav = os.path.join(name, beat_wav)
+        FluidSynth(beat_soundfont).midi_to_audio(beat_filename[part], beat_wav)
+        melo_wav = 'melody' + "-" + part + "-" + str(part_counter) + ".wav"
+        melo_wav = os.path.join(name, melo_wav)
+        FluidSynth(melody_soundfont).midi_to_audio(melo_filename[part], melo_wav)
+        harm_wav = 'harmony' + "-" + part + "-" + str(part_counter) + ".wav"
+        harm_wav = os.path.join(name, harm_wav)
+        FluidSynth(harmony_soundfont).midi_to_audio(harm_filename[part], harm_wav)
+        bass_wav = 'bassline' + "-" + part + "-" + str(part_counter) + ".wav"
+        bass_wav = os.path.join(name, bass_wav)
+        FluidSynth(bassline_soundfont).midi_to_audio(bass_filename[part], bass_wav)
+        # Load the rendered audio files
+        beat = AudioSegment.from_wav(beat_wav)
+        melody = AudioSegment.from_wav(melo_wav)
+        harmony = AudioSegment.from_wav(harm_wav)
+        bassline = AudioSegment.from_wav(bass_wav)
+        #TODO: volume and panning for each layer
+        
+        # Mix the audio files together
+        mix = beat.overlay(melody).overlay(harmony).overlay(bassline)
+        
+        # Save the mixed audio to the output file
+        part_mix_file = name + '-' + str(part_counter) + '.wav';
+        part_mix_file = os.path.join(name, part_mix_file) 
+        mix.export(part_mix_file, format='wav')
+        song_parts.append(part_mix_file)
+    
+    # Iterate through song_parts and concatenate them into a single file
+    song = AudioSegment.from_wav(song_parts[0])
+    for part_wav in song_parts[1:]:
+        song += AudioSegment.from_wav(part_wav)
+    # Save the song as a wav file
+    song_file_wav = name + '.wav'
+    song_file_wav = os.path.join(name, song_file_wav)
+    song.export(song_file_wav, format='wav')
+    print("Song saved as: " + song_file_wav)
+    return song_file_wav
+        
 song_structure1 = {
     'intro': 4,
     'verse': 8,
@@ -269,7 +372,14 @@ song_structure1 = {
     'bridge': 4,
     'outro': 4
 }
-generate_song_parts('C', 120, '4/4', song_structure1, 'song1', 'chord_patterns.txt', 'beat_patterns.txt')
+
+ha = {}
+ba = {}
+me = {}
+be = {}
+
+ha, ba, me, be = generate_song_parts('C', 90, '4/4', song_structure1, 'song2', 'chord_patterns.txt', 'beat_patterns.txt')
+mix_and_save(ha, ba, me, be, 'song2')
 
 song_structure2 = {
     'intro': 2,
@@ -278,4 +388,4 @@ song_structure2 = {
     'bridge': 8,
     'outro': 2
 }
-song2 = generate_song_parts('G', 100, '3/4', song_structure2, 'song2', 'chord_patterns.txt', 'beat_patterns.txt')
+# song2 = generate_song_parts('G', 100, '3/4', song_structure2, 'song2', 'chord_patterns.txt', 'beat_patterns.txt')
