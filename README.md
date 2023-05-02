@@ -1,5 +1,5 @@
 # random_music 
-# Python Random (but 'coherent') Music Generator
+## Python Random (but 'coherent') Music Generator
 
 This project uses Python to generate music in various formats such as MIDI, audio, and sheet music. It makes use of the following libraries:
 
