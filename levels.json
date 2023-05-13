@@ -1,0 +1,32 @@
+{
+    "intro": {
+        "melody": {"volume": "0.8", "panning": "0.2"},
+        "harmony": {"volume": "0.6", "panning": "-0.2"},
+        "bassline": {"volume": "0.7", "panning": "0.1"},
+        "beat": {"volume": "0.9", "panning": "-0.1"}
+    },
+    "verse": {
+        "melody": {"volume": "0.9", "panning": "0.3"},
+        "harmony": {"volume": "0.8", "panning": "-0.3"},
+        "bassline": {"volume": "0.6", "panning": "0.2"},
+        "beat": {"volume": "0.7", "panning": "-0.2"}
+    },
+    "chorus": {
+        "melody": {"volume": "1.0", "panning": "0.4"},
+        "harmony": {"volume": "0.9", "panning": "-0.4"},
+        "bassline": {"volume": "0.8", "panning": "0.3"},
+        "beat": {"volume": "0.9", "panning": "-0.3"}
+    },
+    "bridge": {
+        "melody": {"volume": "0.7", "panning": "0.5"},
+        "harmony": {"volume": "0.6", "panning":"-0.5"},
+        "bassline": {"volume" : "0.5", "panning" : "0.4"},
+        "beat" : {"volume" : "0.8", "panning" : "-0.4"}
+    },
+    "outro" : {
+        "melody" : {"volume" : "0.9", "panning" : "0.6"},
+        "harmony" : {"volume" : "0.7", "panning" : "-0.6"},
+        "bassline" : {"volume" : "0.6", "panning" : "0.5"},
+        "beat" : {"volume" :"0.8", "panning" :"-0.5"}
+    }
+}

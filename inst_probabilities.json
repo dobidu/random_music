@@ -1,0 +1,32 @@
+{
+    "intro": {
+        "melody": 0.5,
+        "harmony": 0.8,
+        "bassline": 0.7,
+        "beat": 0.7
+    },
+    "verse": {
+        "melody": 0.8,
+        "harmony": 0.9,
+        "bassline": 0.7,
+        "beat": 0.9
+    },
+    "chorus": {
+        "melody": 1.0,
+        "harmony": 0.9,
+        "bassline": 0.8,
+        "beat": 1.0
+    },
+    "bridge": {
+        "melody": 0.6,
+        "harmony": 0.6,
+        "bassline": 0.5,
+        "beat": 0.8
+    },
+    "outro": {
+        "melody": 0.9,
+        "harmony": 0.7,
+        "bassline": 0.6,
+        "beat": 1.0
+    }
+}
