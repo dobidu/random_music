@@ -2,6 +2,8 @@ from midiutil import MIDIFile
 from music21 import *
 from pydub import AudioSegment
 from midi2audio import FluidSynth
+import time
+import json
 import random
 import os
 
@@ -221,6 +223,7 @@ def generate_melody(key, tempo, time_signature, measures, name, part, chord_prog
     return filename
 
 def generate_beat(tempo,time_signature,measures,name,part,filename):
+    # TODO: create drum rolls / fills
     # Create a MIDI file with one track
     mf = MIDIFile(1)
     track = 0 
@@ -276,7 +279,7 @@ def generate_beat(tempo,time_signature,measures,name,part,filename):
     print("\t\t\tBeat: " + str(beat_pattern))
     return filename
 
-def generate_song_parts(key, tempo, time_signature, song_structure, name, chord_pat_file, beat_pat_file):
+def generate_song_parts(key, tempo, time_signature, song_measures, name, chord_pat_file, beat_pat_file):
     print("Generating song parts for: " + name)
     print("\tKey: " + key)
     print("\tTempo: " + str(tempo))
@@ -285,7 +288,7 @@ def generate_song_parts(key, tempo, time_signature, song_structure, name, chord_
     bass_filename = {}
     melo_filename = {}
     beat_filename = {}
-    for part, measures in song_structure.items():
+    for part, measures in song_measures.items():
         print("\t\tGenerating part: " + part + " (" + str(measures) + " measures)")
         name_part = name + "-" + part
         chord_progression, harm_filename[part] = generate_chord_progression(key, tempo, time_signature, measures, name_part, part, chord_pat_file)
@@ -309,19 +312,41 @@ def generate_song_arrangement() :
     ]
     return random.choice(common_structures)
 
+def read_instrument_probabilities(file_path):
+    with open(file_path) as f:
+        inst_probabilities = json.load(f)
+    return inst_probabilities  
+
+def get_random_sound_font(directory_path):
+    sound_fonts = [f for f in os.listdir(directory_path) if f.endswith('.sf2')]
+    file_return = random.choice(sound_fonts)
+    return os.path.join(directory_path, file_return)
+
+def get_levels(file_path):
+    with open(file_path) as f:
+        levels = json.load(f)
+    return levels  
+
 def mix_and_save(harm_filename, bass_filename, melo_filename, beat_filename, name):
     song_arramgement = generate_song_arrangement()
     print("Song arrangement: "+ str(song_arramgement) + "\n")
     number_of_parts = len(song_arramgement)
-    # exit(0)
     song_parts = []
     part_counter = 0
-    # TODO: Choose a random soundfont for each layer from pattern file
-    beat_soundfont = os.path.join('sf','some_drum.sf2')
-    melody_soundfont = os.path.join('sf', 'JR_elepiano.sf2')
-    harmony_soundfont = os.path.join('sf','JR_organ.sf2')
-    bassline_soundfont = os.path.join('sf','Genycis_Dark_Stage_Bass.sf2')
-
+    beat_soundfont = get_random_sound_font(str(os.path.join('sf','beat')))
+    melody_soundfont = get_random_sound_font(str(os.path.join('sf','melody')))
+    harmony_soundfont = get_random_sound_font(str(os.path.join('sf','harmony')))
+    bassline_soundfont = get_random_sound_font(str(os.path.join('sf','bassline')))
+    print("Beat soundfont: " + beat_soundfont)
+    print("Melody soundfont: " + melody_soundfont)
+    print("Harmony soundfont: " + harmony_soundfont)
+    print("Bassline soundfont: " + bassline_soundfont)
+    # TODO: gather all file references in a single config file
+    inst_proba = read_instrument_probabilities('inst_probabilities.json')
+    levels = {}
+    levels = get_levels('levels.json')
+    print("Levels: " + str(levels))
+    print("Mixing song parts...")
     for part in song_arramgement:
         part_counter += 1        
         print("Mixing part: " + part + (' (' + str(part_counter) + ' of ' + str(number_of_parts) + ')'))        
@@ -344,10 +369,35 @@ def mix_and_save(harm_filename, bass_filename, melo_filename, beat_filename, nam
         harmony = AudioSegment.from_wav(harm_wav)
         bassline = AudioSegment.from_wav(bass_wav)
         #TODO: volume and panning for each layer
-        
+        beat.volume = float(levels[part]['beat']['volume'])
+        melody.volume = float(levels[part]['melody']['volume'])
+        harmony.volume = float(levels[part]['harmony']['volume'])
+        bassline.volume = float(levels[part]['bassline']['volume'])
+        beat.pan(float(levels[part]['beat']['panning']))
+        melody.pan(float(levels[part]['melody']['panning']))
+        harmony.pan(float(levels[part]['harmony']['panning']))
+        bassline.pan(float(levels[part]['bassline']['panning']))
         # Mix the audio files together
-        mix = beat.overlay(melody).overlay(harmony).overlay(bassline)
-        
+        beat_proba = float(inst_proba[part]['beat'])
+        melody_proba = float(inst_proba[part]['melody'])
+        harmony_proba = float(inst_proba[part]['harmony'])
+        bassline_proba = float(inst_proba[part]['bassline'])
+        # Create an empty AudioSegment to use as the initial mix
+        mix = AudioSegment.silent(duration=beat.duration_seconds*1000)
+        # Overlay each track onto the mix based on its probability value        
+        if random.random() <= beat_proba:
+            mix = mix.overlay(beat)
+            print("Beat added to mix: "+part)
+        if random.random() <= melody_proba:
+            mix = mix.overlay(melody)
+            print("Melody added to mix: "+part)
+        if random.random() <= harmony_proba:
+            mix = mix.overlay(harmony)
+            print("Harmony added to mix: "+part)
+        if random.random() <= bassline_proba:
+            mix = mix.overlay(bassline)
+            print("Bassline added to mix: "+part)
+
         # Save the mixed audio to the output file
         part_mix_file = name + '-' + str(part_counter) + '.wav';
         part_mix_file = os.path.join(name, part_mix_file) 
@@ -364,13 +414,14 @@ def mix_and_save(harm_filename, bass_filename, melo_filename, beat_filename, nam
     song.export(song_file_wav, format='wav')
     print("Song saved as: " + song_file_wav)
     return song_file_wav
-        
-song_structure1 = {
-    'intro': 4,
-    'verse': 8,
-    'chorus': 8,
-    'bridge': 4,
-    'outro': 4
+
+
+song1_measures = {
+    'intro': 16,
+    'verse': 32,
+    'chorus': 32,
+    'bridge': 16,
+    'outro': 16
 }
 
 ha = {}
@@ -378,14 +429,22 @@ ba = {}
 me = {}
 be = {}
 
-ha, ba, me, be = generate_song_parts('C', 90, '4/4', song_structure1, 'song2', 'chord_patterns.txt', 'beat_patterns.txt')
-mix_and_save(ha, ba, me, be, 'song2')
+song_name = '_song1'
 
-song_structure2 = {
+start_time = time.time()
+
+ha, ba, me, be = generate_song_parts('A', 100, '4/4', song1_measures, song_name, 'chord_patterns.txt', 'beat_patterns.txt')
+mix_and_save(ha, ba, me, be, song_name)
+
+end_time = time.time()
+elapsed_time = end_time - start_time
+print(f'Elapsed time: {elapsed_time:.2f} seconds')
+
+song2_measures = {
     'intro': 2,
     'verse': 16,
     'chorus': 8,
     'bridge': 8,
     'outro': 2
 }
-# song2 = generate_song_parts('G', 100, '3/4', song_structure2, 'song2', 'chord_patterns.txt', 'beat_patterns.txt')
+# song2 = generate_song_parts('G', 100, '3/4', song2_measures, 'song2', 'chord_patterns.txt', 'beat_patterns.txt')
