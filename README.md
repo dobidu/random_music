@@ -9,6 +9,8 @@ This project uses Python to generate music in various formats such as MIDI, audi
 - `midi2audio` - for converting MIDI files to audio using a SoundFont synthesizer
 - `random` - for generating random music sequences
 - `os` - for working with file paths and directories
+- `time` - for time measuring
+- `json` - for JSON handling
 
 ## Installation
 1. Clone this repository:
