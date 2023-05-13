@@ -1,1 +1,2 @@
 # The soundfonts are stored here
+# Use subdirs: 'beat', 'bassline', 'harmony' and 'melody' and store '.sf2' files in them
