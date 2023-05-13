@@ -1,2 +1,10 @@
 # The soundfonts are stored here
-# Use subdirs: 'beat', 'bassline', 'harmony' and 'melody' and store '.sf2' files in them
+# Use subdirs: 'beat', 'bassline', 'harmony' and 'melody' to store '.sf2' files in them
+
+# You can download SoundFonts from these sites and use them (just copy them to the subdirs and they might be selected when generating songs).
+
+# Free Soundfont Downloads - Music Production - Zanderjaz. https://www.zanderjaz.com/downloads/soundfonts/.
+# Ultimate List of Free Soundfonts - TriSamples. https://trisamples.com/free-soundfonts/.
+# Download Free Soundfonts | Top Soundfonts sf2 - ProducersBuzz. https://www.producersbuzz.com/category/downloads/download-free-soundfonts-sf2/.
+# GitHub - marmooo/free-soundfonts: Free soundfont collection optimized .... https://github.com/marmooo/free-soundfonts.
+# 500 Soundfonts Collection - Full GM Sets, SF2 Pack - Archive. https://archive.org/details/500-soundfonts-full-gm-sets. 
