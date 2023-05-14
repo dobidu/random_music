@@ -253,18 +253,31 @@ def generate_beat(tempo,time_signature,measures,name,part,filename):
                 beat_patterns[song_part].append(beat_pattern)
     # Create a beat
     beat = []
+
+    # Choose a random beat pattern based on song part and available patterns from file
     if part in beat_patterns:
         beat_pattern = random.choice(beat_patterns[part])
     else:
-        beat_pattern = [kick ,0 ,snare ,0]
-    for i in range(measures):
-        # Choose a random beat pattern based on song part and available patterns from file
+        beat_pattern = [kick, 0, snare, 0]
+    	
+    # Repeat the pattern for the number of measures - 1    
+    for i in range(measures-1):
         beat.extend(beat_pattern)
 
+    # Choose a random beat roll pattern based on song part and available patterns from file
+    roll_part = part + "_roll"
+    
+    if roll_part in beat_patterns:
+        roll_pattern = random.choice(beat_patterns[roll_part])
+    else:
+        roll_pattern = [kick , snare, snare, snare]
+    
+    beat.extend(roll_pattern)
+    
     # Add notes to MIDI file
     for i in range(len(beat)):
-        drum_sound =beat[i]
-        if drum_sound !=0:
+        drum_sound = beat[i]
+        if drum_sound != 0:
             mf.addNote(track ,9 ,drum_sound ,time ,1.0/beats_per_measure ,100)
         time +=1.0/beats_per_measure
 
@@ -276,7 +289,7 @@ def generate_beat(tempo,time_signature,measures,name,part,filename):
     with open(filename, 'wb') as outf:
         mf.writeFile(outf)
     
-    print("\t\t\tBeat: " + str(beat_pattern))
+    print("\t\t\tBeat: " + str(beat))
     return filename
 
 def generate_song_parts(key, tempo, time_signature, song_measures, name, chord_pat_file, beat_pat_file):
@@ -415,7 +428,6 @@ def mix_and_save(harm_filename, bass_filename, melo_filename, beat_filename, nam
     print("Song saved as: " + song_file_wav)
     return song_file_wav
 
-
 song1_measures = {
     'intro': 16,
     'verse': 32,
@@ -433,7 +445,7 @@ song_name = '_song1'
 
 start_time = time.time()
 
-ha, ba, me, be = generate_song_parts('A', 100, '4/4', song1_measures, song_name, 'chord_patterns.txt', 'beat_patterns.txt')
+ha, ba, me, be = generate_song_parts('D', 80, '4/4', song1_measures, song_name, 'chord_patterns.txt', 'beat_patterns.txt')
 mix_and_save(ha, ba, me, be, song_name)
 
 end_time = time.time()
