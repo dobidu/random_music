@@ -5,6 +5,13 @@ intro: 36, 0, 38, 42
 intro: 0, 42, 38, 0
 intro: 36, 0, 38, 0
 intro: 0, 42, 0, 0
+intro_roll: 36, 0, 38, 38
+intro_roll: 38, 38, 38, 38
+intro_roll: 38, 38, 0, 36
+intro_roll: 38, 38, 38, 36
+intro_roll: 36, 38, 38, 38
+intro_roll: 42, 38, 38, 38
+intro_roll: 38, 38, 38, 42
 verse: 36, 0, 38, 0
 verse: 36, 0, 38, 42
 verse: 36, 42, 38, 42
@@ -14,6 +21,13 @@ verse: 36, 0, 38, 42
 verse: 36, 42, 0, 42
 verse: 36, 42, 38, 42
 verse: 36, 0, 38, 0
+verse_roll: 36, 0, 38, 38
+verse_roll: 38, 38, 38, 38
+verse_roll: 38, 38, 0, 36
+verse_roll: 38, 38, 38, 36
+verse_roll: 36, 38, 38, 38
+verse_roll: 42, 38, 38, 38
+verse_roll: 38, 38, 38, 42
 chorus: 36, 0, 38, 0
 chorus: 36, 0, 38, 42
 chorus: 36, 42, 38, 42
@@ -23,6 +37,13 @@ chorus: 36, 0, 38, 0
 chorus: 36, 0, 42, 42
 chorus: 36, 42, 0, 38
 chorus: 36, 0, 42, 0
+chorus_roll: 36, 0, 38, 38
+chorus_roll: 38, 38, 38, 38
+chorus_roll: 38, 38, 0, 36
+chorus_roll: 38, 38, 38, 36
+chorus_roll: 36, 38, 38, 38
+chorus_roll: 42, 38, 38, 38
+chorus_roll: 38, 38, 38, 42
 bridge: 36, 0, 38, 0
 bridge: 36, 0, 38, 42
 bridge: 36, 42, 38, 42
@@ -32,6 +53,13 @@ bridge: 36, 0, 38, 42
 bridge: 36, 42, 0, 42
 bridge: 36, 42, 38, 42
 bridge: 36, 0, 38, 0
+bridge_roll: 36, 0, 38, 38
+bridge_roll: 38, 38, 38, 38
+bridge_roll: 38, 38, 0, 36
+bridge_roll: 38, 38, 38, 36
+bridge_roll: 36, 38, 38, 38
+bridge_roll: 42, 38, 38, 38
+bridge_roll: 38, 38, 38, 42
 outro: 36, 0,38, 0
 outro:36, 42, 38, 42
 outro: 36, 42, 38, 0
@@ -39,3 +67,10 @@ outro: 36, 0, 38, 42
 outro: 0, 42, 38, 0
 outro: 36, 0, 38, 0
 outro: 0, 42, 0, 0
+outro_roll: 36, 0, 38, 38
+outro_roll: 38, 38, 38, 38
+outro_roll: 38, 38, 0, 36
+outro_roll: 38, 38, 38, 36
+outro_roll: 36, 38, 38, 38
+outro_roll: 42, 38, 38, 38
+outro_roll: 38, 38, 38, 42
