@@ -223,7 +223,6 @@ def generate_melody(key, tempo, time_signature, measures, name, part, chord_prog
     return filename
 
 def generate_beat(tempo,time_signature,measures,name,part,filename):
-    # TODO: create drum rolls / fills
     # Create a MIDI file with one track
     mf = MIDIFile(1)
     track = 0 
@@ -341,15 +340,20 @@ def get_levels(file_path):
     return levels  
 
 def mix_and_save(harm_filename, bass_filename, melo_filename, beat_filename, name):
-    song_arramgement = generate_song_arrangement()
-    print("Song arrangement: "+ str(song_arramgement) + "\n")
-    number_of_parts = len(song_arramgement)
+    song_arrangement = generate_song_arrangement()
+    print("Song arrangement: "+ str(song_arrangement) + "\n")
+    number_of_parts = len(song_arrangement)
     song_parts = []
     part_counter = 0
+    soundfonts = {}
     beat_soundfont = get_random_sound_font(str(os.path.join('sf','beat')))
     melody_soundfont = get_random_sound_font(str(os.path.join('sf','melody')))
     harmony_soundfont = get_random_sound_font(str(os.path.join('sf','harmony')))
     bassline_soundfont = get_random_sound_font(str(os.path.join('sf','bassline')))
+    soundfonts['beat'] = beat_soundfont
+    soundfonts['melody'] = melody_soundfont
+    soundfonts['harmony'] = harmony_soundfont
+    soundfonts['bassline'] = bassline_soundfont    
     print("Beat soundfont: " + beat_soundfont)
     print("Melody soundfont: " + melody_soundfont)
     print("Harmony soundfont: " + harmony_soundfont)
@@ -360,7 +364,7 @@ def mix_and_save(harm_filename, bass_filename, melo_filename, beat_filename, nam
     levels = get_levels('levels.json')
     print("Levels: " + str(levels))
     print("Mixing song parts...")
-    for part in song_arramgement:
+    for part in song_arrangement:
         part_counter += 1        
         print("Mixing part: " + part + (' (' + str(part_counter) + ' of ' + str(number_of_parts) + ')'))        
         # Render each MIDI file to an audio file using the chosen soundfont
@@ -381,7 +385,7 @@ def mix_and_save(harm_filename, bass_filename, melo_filename, beat_filename, nam
         melody = AudioSegment.from_wav(melo_wav)
         harmony = AudioSegment.from_wav(harm_wav)
         bassline = AudioSegment.from_wav(bass_wav)
-        #TODO: volume and panning for each layer
+        # TODO: volume and panning for each layer
         beat.volume = float(levels[part]['beat']['volume'])
         melody.volume = float(levels[part]['melody']['volume'])
         harmony.volume = float(levels[part]['harmony']['volume'])
@@ -426,9 +430,52 @@ def mix_and_save(harm_filename, bass_filename, melo_filename, beat_filename, nam
     song_file_wav = os.path.join(name, song_file_wav)
     song.export(song_file_wav, format='wav')
     print("Song saved as: " + song_file_wav)
-    return song_file_wav
+    # Clean the wav parts
+    for part_wav in song_parts:
+        os.remove(part_wav)
+        
+    return song_file_wav, song_arrangement, soundfonts
 
-song1_measures = {
+def create_song(key, tempo, time_signature, measures, name, chord_pat_file, beat_pat_file):
+    song_info = {}
+    song_info['key'] = key
+    song_info['tempo'] = tempo
+    song_info['time_signature'] = time_signature
+    song_info['measures'] = measures
+    song_info['name'] = name
+
+    ha = {}
+    ba = {}
+    me = {}
+    be = {}
+
+    song_name = name
+
+    start_time = time.time()
+    
+    ha, ba, me, be = generate_song_parts(key, tempo, time_signature, measures, song_name, chord_pat_file, beat_pat_file)
+    wav_name, arrangement, soundfonts = mix_and_save(ha, ba, me, be, song_name)
+    
+    end_time = time.time()
+    song_info['file_name'] = wav_name
+    song_info['arrangement'] = arrangement
+    song_info['soundfonts'] = soundfonts
+    
+    elapsed_time = end_time - start_time
+    print(f'Elapsed time: {elapsed_time:.2f} seconds')
+    
+    json_file = os.path.join(name, name + '.json')
+    
+    print('Annotations: ' + json_file)
+    
+    with open(json_file, 'w') as outfile:
+        json.dump(song_info, outfile)
+    
+    return wav_name, json_file
+
+# Example usage
+
+test_song_measures = {
     'intro': 16,
     'verse': 32,
     'chorus': 32,
@@ -436,27 +483,4 @@ song1_measures = {
     'outro': 16
 }
 
-ha = {}
-ba = {}
-me = {}
-be = {}
-
-song_name = '_song1'
-
-start_time = time.time()
-
-ha, ba, me, be = generate_song_parts('D', 80, '4/4', song1_measures, song_name, 'chord_patterns.txt', 'beat_patterns.txt')
-mix_and_save(ha, ba, me, be, song_name)
-
-end_time = time.time()
-elapsed_time = end_time - start_time
-print(f'Elapsed time: {elapsed_time:.2f} seconds')
-
-song2_measures = {
-    'intro': 2,
-    'verse': 16,
-    'chorus': 8,
-    'bridge': 8,
-    'outro': 2
-}
-# song2 = generate_song_parts('G', 100, '3/4', song2_measures, 'song2', 'chord_patterns.txt', 'beat_patterns.txt')
+create_song('C', 120, '4/4', test_song_measures, 'AAAAAA', 'chord_patterns.txt', 'beat_roll_patterns.txt')    
