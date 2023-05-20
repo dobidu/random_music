@@ -2,10 +2,12 @@ from midiutil import MIDIFile
 from music21 import *
 from pydub import AudioSegment
 from midi2audio import FluidSynth
+from datetime import datetime
 import time
 import json
 import random
 import os
+import glob
 
 def generate_chord_progression(key, tempo, time_signature, measures, name, part, pattern_file):
     # Create a MIDI file with one track
@@ -364,8 +366,14 @@ def mix_and_save(harm_filename, bass_filename, melo_filename, beat_filename, nam
     levels = get_levels('levels.json')
     print("Levels: " + str(levels))
     print("Mixing song parts...")
+    song_transitions = []
+    song_time = 0
     for part in song_arrangement:
-        part_counter += 1        
+        this_transition = [part, song_time]
+        song_transitions.append(this_transition)
+        part_counter += 1
+        # part_idx_str = part + "-" + str(part_counter)
+        # song_transitions[part_idx_str] = song_time        
         print("Mixing part: " + part + (' (' + str(part_counter) + ' of ' + str(number_of_parts) + ')'))        
         # Render each MIDI file to an audio file using the chosen soundfont
         beat_wav = 'beat' + "-" + part + "-" + str(part_counter) + ".wav"
@@ -420,7 +428,11 @@ def mix_and_save(harm_filename, bass_filename, melo_filename, beat_filename, nam
         part_mix_file = os.path.join(name, part_mix_file) 
         mix.export(part_mix_file, format='wav')
         song_parts.append(part_mix_file)
+        song_time = song_time + mix.duration_seconds
     
+    # song_transitions['end'] = song_time
+    this_transition = ['end', song_time]
+    song_transitions.append(this_transition)
     # Iterate through song_parts and concatenate them into a single file
     song = AudioSegment.from_wav(song_parts[0])
     for part_wav in song_parts[1:]:
@@ -434,7 +446,8 @@ def mix_and_save(harm_filename, bass_filename, melo_filename, beat_filename, nam
     for part_wav in song_parts:
         os.remove(part_wav)
         
-    return song_file_wav, song_arrangement, soundfonts
+    return song_file_wav, song_arrangement, song_transitions, soundfonts
+
 
 def create_song(key, tempo, time_signature, measures, name, chord_pat_file, beat_pat_file):
     song_info = {}
@@ -454,11 +467,13 @@ def create_song(key, tempo, time_signature, measures, name, chord_pat_file, beat
     start_time = time.time()
     
     ha, ba, me, be = generate_song_parts(key, tempo, time_signature, measures, song_name, chord_pat_file, beat_pat_file)
-    wav_name, arrangement, soundfonts = mix_and_save(ha, ba, me, be, song_name)
+    wav_name, arrangement, transitions, soundfonts = mix_and_save(ha, ba, me, be, song_name)
     
     end_time = time.time()
+    
     song_info['file_name'] = wav_name
     song_info['arrangement'] = arrangement
+    song_info['transitions'] = transitions
     song_info['soundfonts'] = soundfonts
     
     elapsed_time = end_time - start_time
@@ -469,18 +484,97 @@ def create_song(key, tempo, time_signature, measures, name, chord_pat_file, beat
     print('Annotations: ' + json_file)
     
     with open(json_file, 'w') as outfile:
-        json.dump(song_info, outfile)
+        json.dump(song_info, outfile, indent=4)
+
+    # TODO: clean temp files in a better way (ATS)
+    midi_del = "*.mid"
+    midi_path = os.path.join(name, midi_del)
+    midi_files = glob.glob(midi_path)
+    for midi_file in midi_files:
+        os.remove(midi_file)
+    
+    wav_del = "beat-*.wav" 
+    wav_path = os.path.join(name, wav_del)
+    wav_files = glob.glob(wav_path)
+    for wav_file in wav_files:
+        os.remove(wav_file)
+
+    wav_del = "bassline-*.wav" 
+    wav_path = os.path.join(name, wav_del)
+    wav_files = glob.glob(wav_path)
+    for wav_file in wav_files:
+        os.remove(wav_file)
+
+    wav_del = "harmony-*.wav" 
+    wav_path = os.path.join(name, wav_del)
+    wav_files = glob.glob(wav_path)
+    for wav_file in wav_files:
+        os.remove(wav_file)
+
+    wav_del = "melody-*.wav" 
+    wav_path = os.path.join(name, wav_del)
+    wav_files = glob.glob(wav_path)
+    for wav_file in wav_files:
+        os.remove(wav_file)
+
     
     return wav_name, json_file
 
+def generate_random_key():
+    # https://www.digitaltrends.com/music/whats-the-most-popular-music-key-spotify/
+    # https://web.archive.org/web/20190426230344/https://insights.spotify.com/us/2015/05/06/most-popular-keys-on-spotify/
+    # https://forum.bassbuzz.com/t/most-used-keys-on-spotify/5886
+
+    key_ranges = [(0.107, 'G'), (0.209, 'C'), (0.296, 'D'), (0.357, 'A'), (0.417, 'C#'), (0.47, 'F'),
+                  (0.518, 'Am'), (0.561, 'G#'), (0.603, 'Em'), (0.645, 'Bm'), (0.681, 'E'), (0.716, 'A#'),
+                  (0.748, 'A#m'), (0.778, 'Fm'), (0.805, 'F#'), (0.831, 'B'), (0.857, 'Gm'), (0.883, 'Dm'),
+                  (0.908, 'F#m'), (0.932, 'D#'), (0.956, 'Cm'), (0.977, 'C#m'), (0.989, 'G#m'), (1.0, 'D#m')
+    ]
+    dice = random.random()
+    for prob, key in key_ranges:
+        if dice < prob:
+            return key    
+
+def generate_random_tempo():
+    # https://blog.musiio.com/2021/08/19/which-musical-tempos-are-people-streaming-the-most/
+    tempo_ranges = [(0.0183, 60, 70), (0.0454, 70, 80), (0.1849, 80, 90), (0.3721, 90, 100),
+                    (0.4817, 100, 110), (0.5747, 110, 120), (0.7048, 120, 130), (0.7917, 130, 140),
+                    (0.8958, 140, 150), (0.9739, 150, 160), (1.0, 160, 170)]
+    dice = random.random()
+    for prob, min_tempo, max_tempo in tempo_ranges:
+        if dice < prob:
+            return random.randint(min_tempo, max_tempo)
+
+def generate_random_time_signature():
+    time_signature_ranges = [(0.6, '4/4'), (0.75, '3/4'), (0.90, '2/4'), (1.0, '6/8')]
+    dice = random.random()
+    for prob, time_signature in time_signature_ranges:
+        if dice < prob:
+            return time_signature  
+
+def generate_song_measures():
+    intro_len = random.choice([8,16,32,64])
+    verse_len = random.choice([16,32,64])
+    chorus_len = random.choice([16,32])
+    bridge_len = random.choice([8,16,32])
+    outro_len = random.choice([8,16,32])
+    song_measures = {
+        'intro': intro_len,
+        'verse': verse_len,
+        'chorus': chorus_len,
+        'bridge': bridge_len,
+        'outro': outro_len
+    }
+    return song_measures
+
 # Example usage
 
-test_song_measures = {
-    'intro': 16,
-    'verse': 32,
-    'chorus': 32,
-    'bridge': 16,
-    'outro': 16
-}
+key = generate_random_key()
+tempo = generate_random_tempo()
+time_signature = generate_random_time_signature()
+song_measures = generate_song_measures()
+now = datetime.now()
+song_name = now.strftime("%Y%m%d%H%M%S")
 
-create_song('C', 120, '4/4', test_song_measures, 'AAAAAA', 'chord_patterns.txt', 'beat_roll_patterns.txt')    
+create_song(key, tempo, time_signature, song_measures, song_name, 'chord_patterns.txt', 'beat_roll_patterns.txt')
+
