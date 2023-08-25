@@ -636,7 +636,7 @@ def mix_and_save(harm_filename, bass_filename, melo_filename, beat_filename, nam
         bass_wav = os.path.join(name, bass_wav)
         FluidSynth(bassline_soundfont).midi_to_audio(bass_filename[part], bass_wav)
         # Load the rendered audio files, applying the effects defined in the JSON files
-        # TODO: optmize it so that the fx are only applied to the used layers
+        # TODO: optimize it so that the fx are only applied to the used layers
         beat = AudioSegment.from_wav(apply_fx_to_layer(beat_wav, 'beat_fx.json'))
         melody = AudioSegment.from_wav(apply_fx_to_layer(melo_wav, 'melody_fx.json'))
         harmony = AudioSegment.from_wav(apply_fx_to_layer(harm_wav, 'harmony_fx.json'))
