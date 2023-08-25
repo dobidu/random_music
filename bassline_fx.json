@@ -1,0 +1,54 @@
+{
+    "compressor": {
+        "probability": 0.5,
+        "value_range": {
+            "threshold_db": [-50, 0],
+            "ratio": [1, 25],
+            "attack_ms": [1, 100],
+            "release_ms": [1, 100]
+        }
+    },
+    "gain": {
+        "probability": 0.7,
+        "value_range": {
+            "gain_db": [0, 40]
+        }
+    },
+    "chorus": {
+        "probability": 0.3,
+        "value_range": {
+            "depth": [0, 0],
+            "feedback": [0, 0],
+            "rate_hz": [0, 0]
+        }
+    },
+    "ladder_filter": {
+        "probability": 0.4,
+        "value_range": {
+            "cutoff_hz": [200, 1000],
+            "resonance": [0, 1]
+        }
+    },
+    "phaser": {
+        "probability": 0.2,
+        "value_range": {
+            "depth": [0, 0],
+            "feedback": [0, 0],
+            "rate_hz": [0, 0],
+            "centre_frequency_hz": [0, 0]
+        }
+    },
+    "delay": {
+        "probability": 0.6,
+        "value_range": {
+            "delay_seconds": [0.1, 1],
+            "mix": [0, 1]
+        }
+    },
+    "reverb": {
+        "probability": 0.8,
+        "value_range": {
+            "room_size": [0.1, 1]
+        }
+    }
+}
