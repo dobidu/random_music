@@ -7,6 +7,7 @@ This project uses Python to generate music in various formats such as MIDI, audi
 - `music21` - for working with sheet music
 - `pydub` - for working with audio files
 - `midi2audio` - for converting MIDI files to audio using a SoundFont synthesizer
+- `pedalboard` - for audio effects
 - `random` - for generating random music sequences
 - `os` - for working with file paths and directories
 - `time` - for time measuring
@@ -20,7 +21,7 @@ git clone https://github.com/dobidu/random_music/
 
 2. Install the required dependencies:
 ```bash
-pip install midiutil music21 pydub midi2audio
+pip install midiutil music21 pydub midi2audio pedalboard
 ```
 
 3. Install FluidSynth synthesizer (required for converting MIDI to audio):
