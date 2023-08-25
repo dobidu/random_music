@@ -38,5 +38,5 @@ sudo apt-get install fluidsynth
 
 4. See the example usage in random_song.py; run it using:
 ```bash
-python3 random_song.py
+python3 music_gen.py
 ```
