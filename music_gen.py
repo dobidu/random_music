@@ -31,6 +31,8 @@ def generate_chord_progression(key, tempo, time_signature, measures, name, part,
                 part_name, pattern = line.split(':')
                 chord_patterns.setdefault(part_name, []).append(pattern.split(','))
 
+    # Shuffle the list of chord patterns
+    random.shuffle(chord_patterns.get(part, chord_patterns.get(part, [['I', 'IV', 'V', 'vi']])))
     # Choose a random chord pattern based on the part of the song
     chord_pattern = random.choice(chord_patterns.get(part, [['I', 'IV', 'V', 'vi']]))
 
@@ -720,4 +722,3 @@ for i in range(10):
     now = datetime.now()
     song_name = now.strftime("%Y%m%d%H%M%S")
     create_song(key, tempo, time_signature, song_measures, song_name, 'chord_patterns.txt', 'beat_roll_patterns.txt')
-
