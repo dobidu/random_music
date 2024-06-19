@@ -12,6 +12,7 @@ This project uses Python to generate music in various formats such as MIDI, audi
 - `os` - for working with file paths and directories
 - `time` - for time measuring
 - `json` - for JSON handling
+- `librosa` - for the musicality score
 
 ## Installation
 1. Clone this repository:
@@ -21,7 +22,7 @@ git clone https://github.com/dobidu/random_music/
 
 2. Install the required dependencies:
 ```bash
-pip install midiutil music21 pydub midi2audio pedalboard
+pip install midiutil music21 pydub midi2audio pedalboard librosa
 ```
 
 3. Install FluidSynth synthesizer (required for converting MIDI to audio):
